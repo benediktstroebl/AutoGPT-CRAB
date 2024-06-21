@@ -72,6 +72,13 @@ def cli(ctx: click.Context):
     type=str,
     help="AI role override",
 )
+
+@click.option(
+    "--ai-task",
+    type=str,
+    help="Task of the agent to run; if not specified, the user will be prompted to choose one.",
+)
+
 @click.option(
     "--constraint",
     type=str,
@@ -140,6 +147,7 @@ def run(
     skip_reprompt: bool,
     ai_name: Optional[str],
     ai_role: Optional[str],
+    ai_task: Optional[str],
     resource: tuple[str],
     constraint: tuple[str],
     best_practice: tuple[str],
@@ -172,6 +180,7 @@ def run(
         install_plugin_deps=install_plugin_deps,
         override_ai_name=ai_name,
         override_ai_role=ai_role,
+        ai_task=ai_task,
         resources=list(resource),
         constraints=list(constraint),
         best_practices=list(best_practice),

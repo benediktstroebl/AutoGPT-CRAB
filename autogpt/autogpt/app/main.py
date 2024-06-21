@@ -73,6 +73,7 @@ async def run_auto_gpt(
     install_plugin_deps: bool = False,
     override_ai_name: Optional[str] = None,
     override_ai_role: Optional[str] = None,
+    ai_task: Optional[str] = None,
     resources: Optional[list[str]] = None,
     constraints: Optional[list[str]] = None,
     best_practices: Optional[list[str]] = None,
@@ -83,6 +84,7 @@ async def run_auto_gpt(
     # Storage
     local = config.file_storage_backend == FileStorageBackendName.LOCAL
     restrict_to_root = not local or config.restrict_to_workspace
+
     file_storage = get_storage(
         config.file_storage_backend,
         root_path=Path("data"),
@@ -157,6 +159,9 @@ async def run_auto_gpt(
     agent_manager = AgentManager(file_storage)
     existing_agents = agent_manager.list_agents()
     load_existing_agent = ""
+
+    # disable resuming agents for now
+    existing_agents = False
     if existing_agents:
         print(
             "Existing agents\n---------------\n"
@@ -252,12 +257,15 @@ async def run_auto_gpt(
     # Set up a new Agent #
     ######################
     if not agent:
-        task = ""
-        while task.strip() == "":
-            task = clean_input(
-                "Enter the task that you want AutoGPT to execute,"
-                " with as much detail as possible:",
-            )
+        if ai_task is None:
+            task = ""
+            while task.strip() == "":
+                task = clean_input(
+                    "Enter the task that you want AutoGPT to execute,"
+                    " with as much detail as possible:",
+                )
+        else:
+            task = ai_task.strip()
 
         ai_profile = AIProfile()
         additional_ai_directives = AIDirectives()
@@ -295,7 +303,8 @@ async def run_auto_gpt(
             logger.info("AI config overrides specified through CLI; skipping revision")
 
         agent = create_agent(
-            agent_id=agent_manager.generate_id(ai_profile.ai_name),
+            # agent_id=agent_manager.generate_id(ai_profile.ai_name),
+            agent_id=ai_profile.ai_name,
             task=task,
             ai_profile=ai_profile,
             directives=additional_ai_directives,
@@ -340,10 +349,11 @@ async def run_auto_gpt(
         logger.info(f"Saving state of {agent_id}...")
 
         # Allow user to Save As other ID
-        save_as_id = clean_input(
-            f"Press enter to save as '{agent_id}',"
-            " or enter a different ID to save to:",
-        )
+        # save_as_id = clean_input(
+        #     f"Press enter to save as '{agent_id}',"
+        #     " or enter a different ID to save to:",
+        # )
+        save_as_id = agent_id
         # TODO: allow many-to-one relations of agents and workspaces
         await agent.file_manager.save_state(
             save_as_id.strip() if not save_as_id.isspace() else None
